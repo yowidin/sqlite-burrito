@@ -120,7 +120,6 @@ def main():
     i = 0
     while i < len(lines):
         line = lines[i]
-        line_num = i
 
         def handle_char_def():
             m = re.match(r'^#define\s+(SQLITE_.+?)\s+\"(.+)\"', line)
@@ -146,52 +145,9 @@ def main():
 
             return False
 
-        def handle_typedef():
-            m = re.match(r'^typedef\s+struct\s+(sqlite3_.+?)\s+sqlite3_.+?;', line)
-            if m:
-                # Skip typedefs for now
-                # expressions.append('struct %s;' % m.group(1))
-                return True
-
-            return False
-
-        def handle_func_def():
-            m = re.match(r'^SQLITE_API\s+(.+)', line)
-            if m:
-                if 'SQLITE_EXTERN' in line:
-                    return False
-
-                expression = 'extern %s' % m.group(1)
-
-                # Single line definition
-                if ';' in line:
-                    # Skip funcs for now
-                    # expressions.append(expression)
-                    return True
-                else:
-                    expression += '\n'
-
-                # Multiline expression
-                j = line_num + 1
-                while j < len(lines):
-                    look_ahead = lines[j]
-                    expression += look_ahead
-                    if ';' in look_ahead:
-                        nonlocal i
-                        i = j + 1
-                        break
-                    j += 1
-
-                # Skip funcs for now
-                # expressions.append(expression)
-
-                return True
-
-            return False
-
         i += 1
 
-        if handle_char_def() or handle_int_def() or handle_typedef() or handle_func_def():
+        if handle_char_def() or handle_int_def():
             continue
 
     write_isolation_header(args=args, expressions=expressions)
