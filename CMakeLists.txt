@@ -13,12 +13,14 @@ project(SQLiteBurrito VERSION ${SQLITE_BURRITO_VERSION} LANGUAGES CXX)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-set(SB_GENERATED_FILES_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include/")
-set(SB_GENERATED_CONFIG_HEADER  "${SB_GENERATED_FILES_DIR}/sqlite-burrito/config.h")
-set(SB_GENERATED_VERSION_HEADER "${SB_GENERATED_FILES_DIR}/sqlite-burrito/version.h")
-set(SB_GENERATED_EXPORT_HEADER  "${SB_GENERATED_FILES_DIR}/sqlite-burrito/export.h")
+set(SB_GENERATED_FILES_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(SB_GENERATED_INCLUDES_DIR "${SB_GENERATED_FILES_DIR}/include")
+set(SB_GENERATED_SRC_DIR "${SB_GENERATED_FILES_DIR}/src")
+set(SB_GENERATED_CONFIG_HEADER  "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/config.h")
+set(SB_GENERATED_VERSION_HEADER "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/version.h")
+set(SB_GENERATED_EXPORT_HEADER  "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/export.h")
 
-file(MAKE_DIRECTORY ${SB_GENERATED_FILES_DIR})
+file(MAKE_DIRECTORY ${SB_GENERATED_INCLUDES_DIR})
 configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in ${SB_GENERATED_CONFIG_HEADER})
 configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/version.h.in ${SB_GENERATED_VERSION_HEADER})
 
@@ -30,7 +32,41 @@ add_library(library
    include/sqlite-burrito/library.h
 
    src/library.cpp
+   src/errors/sqlite.cpp
+
+   ${SB_ISOLATION_SOURCE_FILE}
 )
+
+# --- Generate (or use an existing) isolation header and source files --- #
+set(SB_ISOLATION_HEADER_FILE ${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/isolation/sqlite3.cpp)
+set(SB_ISOLATION_SOURCE_FILE ${SB_GENERATED_SRC_DIR}/isolation/sqlite3.h)
+
+option(SB_USE_EXISTING_ISOLATION_FILES "Use already existing isolation files" OFF)
+mark_as_advanced(SB_USE_EXISTING_ISOLATION_FILES)
+
+if(NOT SB_USE_EXISTING_ISOLATION_FILES)
+   message(STATUS "Generating isolation files")
+   set(SQLITE3_INCLUDE_FILE_PATH ${SQLite3_INCLUDE_DIRS}/sqlite3.h)
+   include(${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateIsolationFiles.cmake)
+   generate_isolation_files(
+      GENERATOR_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/generate-isolation-files.py
+      INCLUDE_FILE ${SQLITE3_INCLUDE_FILE_PATH}
+      INCLUDE_OUTPUT_PATH ${SB_ISOLATION_HEADER_FILE}
+      SOURCE_OUTPUT_PATH ${SB_ISOLATION_SOURCE_FILE}
+   )
+
+   # Add the generated files as dependencies for the main application
+   add_custom_target(SQLiteBurritoIsolationFiles
+      DEPENDS ${SB_ISOLATION_HEADER_FILE} ${SB_ISOLATION_SOURCE_FILE}
+      SOURCES ${SQLITE3_INCLUDE_FILE_PATH})
+   add_dependencies(library SQLiteBurritoIsolationFiles)
+else()
+   message(STATUS "Using existing isolation files")
+endif()
+
+message(STATUS "Isolation files:")
+message(STATUS "${SB_ISOLATION_HEADER_FILE}")
+message(STATUS "${SB_ISOLATION_SOURCE_FILE}")
 
 set_target_properties(library PROPERTIES
    VISIBILITY_INLINES_HIDDEN ON
@@ -52,7 +88,7 @@ endif()
 
 target_include_directories(library
    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
-   PUBLIC $<BUILD_INTERFACE:${SB_GENERATED_FILES_DIR}>
+   PUBLIC $<BUILD_INTERFACE:${SB_GENERATED_INCLUDES_DIR}>
 
    PUBLIC $<INSTALL_INTERFACE:include/>
 )
