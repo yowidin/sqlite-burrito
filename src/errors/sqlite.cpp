@@ -9,6 +9,7 @@
 using namespace sqlite_burrito::errors::sqlite3;
 
 #include <string>
+#include <sqlite3.h>
 
 namespace detail {
 

@@ -8,6 +8,9 @@ mark_as_advanced(SQLITE_BURRITO_VERSION)
 
 project(SQLiteBurrito VERSION ${SQLITE_BURRITO_VERSION} LANGUAGES CXX)
 
+find_package(SQLite3 REQUIRED)
+message(STATUS "SQLite3 version: ${SQLite3_VERSION}")
+
 # --- Files generation -- #
 
 include(CMakePackageConfigHelpers)
@@ -26,20 +29,16 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/version.h.in ${SB_GENERATED_VERSI
 
 # --- Library and its properties --- #
 
-find_package(SQLite3 REQUIRED)
-
 add_library(library
    include/sqlite-burrito/library.h
 
    src/library.cpp
    src/errors/sqlite.cpp
-
-   ${SB_ISOLATION_SOURCE_FILE}
 )
 
 # --- Generate (or use an existing) isolation header and source files --- #
-set(SB_ISOLATION_HEADER_FILE ${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/isolation/sqlite3.cpp)
-set(SB_ISOLATION_SOURCE_FILE ${SB_GENERATED_SRC_DIR}/isolation/sqlite3.h)
+set(SB_ISOLATION_HEADER_FILE ${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/isolation/sqlite3.h)
+set(SB_ISOLATION_SOURCE_FILE ${SB_GENERATED_SRC_DIR}/isolation/sqlite3.cpp)
 
 option(SB_USE_EXISTING_ISOLATION_FILES "Use already existing isolation files" OFF)
 mark_as_advanced(SB_USE_EXISTING_ISOLATION_FILES)
@@ -47,9 +46,10 @@ mark_as_advanced(SB_USE_EXISTING_ISOLATION_FILES)
 if(NOT SB_USE_EXISTING_ISOLATION_FILES)
    message(STATUS "Generating isolation files")
    set(SQLITE3_INCLUDE_FILE_PATH ${SQLite3_INCLUDE_DIRS}/sqlite3.h)
+   set(GIF_GENERATOR_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/generate-isolation-files.py)
    include(${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateIsolationFiles.cmake)
    generate_isolation_files(
-      GENERATOR_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/generate-isolation-files.py
+      GENERATOR_PATH ${GIF_GENERATOR_PATH}
       INCLUDE_FILE ${SQLITE3_INCLUDE_FILE_PATH}
       INCLUDE_OUTPUT_PATH ${SB_ISOLATION_HEADER_FILE}
       SOURCE_OUTPUT_PATH ${SB_ISOLATION_SOURCE_FILE}
@@ -57,7 +57,7 @@ if(NOT SB_USE_EXISTING_ISOLATION_FILES)
 
    # Add the generated files as dependencies for the main application
    add_custom_target(SQLiteBurritoIsolationFiles
-      DEPENDS ${SB_ISOLATION_HEADER_FILE} ${SB_ISOLATION_SOURCE_FILE}
+      DEPENDS ${SB_ISOLATION_HEADER_FILE} ${SB_ISOLATION_SOURCE_FILE} ${GIF_GENERATOR_PATH}
       SOURCES ${SQLITE3_INCLUDE_FILE_PATH})
    add_dependencies(library SQLiteBurritoIsolationFiles)
 else()
@@ -67,6 +67,8 @@ endif()
 message(STATUS "Isolation files:")
 message(STATUS "${SB_ISOLATION_HEADER_FILE}")
 message(STATUS "${SB_ISOLATION_SOURCE_FILE}")
+
+target_sources(library PRIVATE ${SB_ISOLATION_SOURCE_FILE})
 
 set_target_properties(library PROPERTIES
    VISIBILITY_INLINES_HIDDEN ON
