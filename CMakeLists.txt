@@ -32,8 +32,14 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/version.h.in ${SB_GENERATED_VERSI
 add_library(library
    include/sqlite-burrito/library.h
 
+   # TODO: Delete vvv
    src/library.cpp
+
    src/errors/sqlite.cpp
+   src/mutex.cpp
+   src/connection.cpp
+   src/statement.cpp
+   src/bind_parameters.cpp
 )
 
 # --- Generate (or use an existing) isolation header and source files --- #
@@ -77,7 +83,7 @@ set_target_properties(library PROPERTIES
    SOVERSION ${SQLITE_BURRITO_SOVERSION}
    VERSION ${SQLITE_BURRITO_VERSION}
 
-   CXX_STANDARD 11
+   CXX_STANDARD 14
    CXX_STANDARD_REQUIRED YES
    CXX_EXTENSIONS NO
 

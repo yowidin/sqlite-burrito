@@ -137,10 +137,10 @@ def main():
             return False
 
         def handle_int_def():
-            m = re.match(r'^#define\s+(SQLITE_.+?)\s+((0x)?\d+|\(.+\))', line)
+            m = re.match(r'^#define\s+(SQLITE(3)?_.+?)\s+((0x)?\d+|\(.+\))', line)
             if m:
                 name = m.group(1).lower()
-                value = m.group(2).lower()
+                value = m.group(3).lower()
 
                 if name in ['sqlite_static', 'sqlite_transient']:
                     # Skip some esoteric defines
