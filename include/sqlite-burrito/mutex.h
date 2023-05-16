@@ -6,19 +6,19 @@
 #ifndef INCLUDE_SQLITE_BURRITO_MUTEX_H
 #define INCLUDE_SQLITE_BURRITO_MUTEX_H
 
-#include <sqlite-burrito/isolation/sqlite3.h>
 #include <sqlite-burrito/export.h>
+
+#include <sqlite3.h>
 
 #include <memory>
 
 namespace sqlite_burrito {
 
-namespace detail {
-class mutex_ptr;
-}
-
 //! Encapsulates an SQLite3 mutex and provides std-like access to it
 SQLITE_BURRITO_EXPORT class mutex {
+public:
+   using native_handle_t = ::sqlite3_mutex *;
+
 public:
    explicit mutex(bool recursive = false);
    ~mutex();
@@ -39,7 +39,8 @@ public:
    bool try_lock();
 
 private:
-   std::unique_ptr<detail::mutex_ptr> mutex_; //!< Mutex wrapper
+   //! Native handle
+   native_handle_t mutex_;
 };
 
 } // namespace sqlite_burrito

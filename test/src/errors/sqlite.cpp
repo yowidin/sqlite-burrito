@@ -11,53 +11,53 @@
 using namespace sqlite_burrito::errors;
 
 TEST_CASE("OK code should not count as error", "[errors]") {
-   std::error_code ec = sqlite3::error::ok;
+   std::error_code ec = error::ok;
    REQUIRE(!ec);
-   REQUIRE(ec == sqlite3::condition::ok);
+   REQUIRE(ec == condition::ok);
 }
 
 TEST_CASE("Error codes should map to error conditions", "[errors]") {
-   std::error_code ec = sqlite3::error::ioerr_read;
+   std::error_code ec = error::ioerr_read;
    REQUIRE(ec);
-   REQUIRE(ec == sqlite3::condition::ioerr);
+   REQUIRE(ec == condition::ioerr);
 
-   ec = sqlite3::error::ioerr_blocked;
+   ec = error::ioerr_blocked;
    REQUIRE(ec);
-   REQUIRE(ec == sqlite3::condition::ioerr);
+   REQUIRE(ec == condition::ioerr);
 }
 
 TEST_CASE("Error codes should provide a message", "[errors]") {
-   std::error_code ec = sqlite3::error::ioerr_read;
+   std::error_code ec = error::ioerr_read;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 
    REQUIRE(!std::string(ec.category().name()).empty());
 
-   ec = sqlite3::error::ioerr_blocked;
+   ec = error::ioerr_blocked;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 }
 
 TEST_CASE("Error conditions should provide a message", "[errors]") {
-   std::error_condition ec = sqlite3::condition::ioerr;
+   std::error_condition ec = condition::ioerr;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 
    REQUIRE(!std::string(ec.category().name()).empty());
 
-   ec = sqlite3::condition::auth;
+   ec = condition::auth;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 }
 
 TEST_CASE("Test make functions", "[errors]") {
-   auto err = sqlite3::make_error_code(sqlite3::error::ioerr_read);
+   auto err = make_error_code(error::ioerr_read);
    REQUIRE(err);
-   REQUIRE(err.category() == sqlite3::sqlite3_error_category());
+   REQUIRE(err.category() == sqlite3_error_category());
 
-   auto cond = sqlite3::make_error_condition(sqlite3::condition::ioerr);
+   auto cond = make_error_condition(condition::ioerr);
    REQUIRE(cond);
-   REQUIRE(cond.category() == sqlite3::sqlite3_condition_category());
+   REQUIRE(cond.category() == sqlite3_condition_category());
 
    REQUIRE(err == cond);
 }

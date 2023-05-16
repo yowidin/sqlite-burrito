@@ -7,7 +7,6 @@
 #include <catch2/catch.hpp>
 
 #include <sqlite-burrito/connection.h>
-#include <sqlite-burrito/errors/sqlite.h>
 #include <sqlite-burrito/statement.h>
 
 #include <iterator>
@@ -21,8 +20,7 @@ TEST_CASE("Prepare should return a valid iterator", "[statement][prepare]") {
    statement stmt{conn};
 
    SECTION("in the middle on success") {
-      std::string request{
-          "CREATE TABLE test(foo INT);INSERT INTO test VALUES(10);"};
+      std::string_view request{"CREATE TABLE test(foo INT);INSERT INTO test VALUES(10);"};
       std::error_code ec;
       auto it = stmt.prepare(request, ec);
 
@@ -35,7 +33,7 @@ TEST_CASE("Prepare should return a valid iterator", "[statement][prepare]") {
    }
 
    SECTION("at the end on success") {
-      std::string request = "CREATE TABLE test(foo INT);";
+      std::string_view request = "CREATE TABLE test(foo INT);";
       std::error_code ec;
       auto it = stmt.prepare(request, ec);
 
