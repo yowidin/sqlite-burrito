@@ -29,7 +29,6 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in ${SB_GENERATED_CONFIG
 
 add_library(library
    src/errors/sqlite.cpp
-   src/mutex.cpp
    src/connection.cpp
    src/statement.cpp
 )
