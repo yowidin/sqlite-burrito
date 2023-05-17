@@ -1,0 +1,64 @@
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+set(SB_VERSION_CONFIG "${SB_GENERATED_CMAKE_DIR}/${PROJECT_NAME}ConfigVersion.cmake")
+set(SB_PROJECT_CONFIG "${SB_GENERATED_CMAKE_DIR}/${PROJECT_NAME}Config.cmake")
+
+set(SB_INSTALL_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+set(SB_TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+set(SB_INSTALL_NAMESPACE "${PROJECT_NAME}::")
+
+set(SB_INSTALL_TARGETS library)
+
+write_basic_package_version_file(${SB_VERSION_CONFIG} COMPATIBILITY SameMajorVersion)
+configure_package_config_file(
+   ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
+   ${SB_PROJECT_CONFIG}
+   INSTALL_DESTINATION ${SB_INSTALL_CMAKE_DIR}
+)
+
+install(
+   TARGETS ${SB_INSTALL_TARGETS}
+
+   EXPORT ${SB_TARGETS_EXPORT_NAME}
+
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+           COMPONENT   SQLiteBurrito_Runtime
+
+   LIBRARY DESTINATION        ${CMAKE_INSTALL_LIBDIR}
+           COMPONENT          SQLiteBurrito_Runtime
+           NAMELINK_COMPONENT SQLiteBurrito_Development
+
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+           COMPONENT   SQLiteBurrito_Development
+
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+   FILES
+      ${SB_GENERATED_CONFIG_HEADER}
+      ${SB_GENERATED_EXPORT_HEADER}
+   DESTINATION
+      "${CMAKE_INSTALL_INCLUDEDIR}/sqlite-burrito"
+)
+
+install(
+   FILES
+      ${SB_PROJECT_CONFIG}
+      ${SB_VERSION_CONFIG}
+   DESTINATION
+      ${SB_INSTALL_CMAKE_DIR}
+)
+
+set_target_properties(library PROPERTIES EXPORT_NAME library)
+add_library(SQLiteBurrito::library ALIAS library)
+
+install(
+   EXPORT ${SB_TARGETS_EXPORT_NAME}
+   DESTINATION ${SB_INSTALL_CMAKE_DIR}
+   NAMESPACE ${SB_INSTALL_NAMESPACE}
+   COMPONENT SQLiteBurrito_Development
+)
