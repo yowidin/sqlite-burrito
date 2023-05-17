@@ -1,0 +1,82 @@
+---
+name: Build and Run Tests
+
+on:
+  push:
+    branches-ignore: [main]
+    tags:
+      - "**"
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          # TODO: Use conan
+          # - windows-2022
+          # - macos-12
+          - ubuntu-20.04
+        build_type:
+          - Debug
+          - Release
+        build_shared:
+          - ON
+          - OFF
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install conan
+
+      - name: Install dependencies (Windows)
+        if: startsWith(matrix.os, 'windows')
+        run:  |
+          conan config set general.cmake_generator="Visual Studio 17 2022"
+
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run:  |
+          brew update
+          brew install ninja
+          conan config set general.cmake_generator="Ninja"
+
+      # TODO: Use conan
+      - name: Install required host packages
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build git python3-pip clang \
+                                  libsqlite3-dev
+
+      - name: Build
+        run: |
+          cmake -H. -B_build \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE="${{ matrix.build_type }}" \
+            -DBUILD_TESTING=ON \
+            -DBUILD_SHARED_LIBS="${{ matrix.build_shared }}"
+          cmake --build _build
+
+      - name: Run Tests
+        run: |
+          cd _build
+          ctest
