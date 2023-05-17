@@ -1,6 +1,9 @@
 ---
 name: Build and Run Tests
 
+env:
+  REFERENCE: "sqlite-burrito/0.2.0@conan-burrito/stable"
+
 on:
   push:
     branches-ignore: [main]
@@ -21,24 +24,31 @@ jobs:
       fail-fast: true
       matrix:
         os:
-          # TODO: Use conan
-          # - windows-2022
-          # - macos-12
+          - windows-2022
+          - macos-12
           - ubuntu-20.04
+
         build_type:
           - Debug
           - Release
-        build_shared:
-          - ON
-          - OFF
+
+        shared:
+          - "True"
+          - "False"
 
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
 
+      - name: Checkout profiles
+        uses: actions/checkout@v3
+        with:
+          repository: conan-burrito/profiles
+          path: profiles
+
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: '3.x'
 
@@ -47,36 +57,18 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install conan
 
-      - name: Install dependencies (Windows)
-        if: startsWith(matrix.os, 'windows')
+      - name: Configure conan
+        run: |
+          conan --version
+          conan profile detect
+          conan config install ./profiles
+          conan remote add conan-burrito "${{ secrets.CONAN_UPLOAD }}"
+          conan remote login conan-burrito "${{ secrets.CONAN_LOGIN_USERNAME }}" -p "${{ secrets.CONAN_PASSWORD }}"
+
+      - name: Build native
         run:  |
-          conan config set general.cmake_generator="Visual Studio 17 2022"
+          conan create --user=conan-burrito --channel=stable -b missing -s compiler.cppstd=17 -s build_type=${{ matrix.build_type }} -o shared=${{ matrix.shared }} .
 
-      - name: Install dependencies (macOS)
-        if: startsWith(matrix.os, 'macos')
-        run:  |
-          brew update
-          brew install ninja
-          conan config set general.cmake_generator="Ninja"
+      - name: Upload artefacts
+        run: conan upload -c -r conan-burrito sqlite-burrito/*
 
-      # TODO: Use conan
-      - name: Install required host packages
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build git python3-pip clang \
-                                  libsqlite3-dev
-
-      - name: Build
-        run: |
-          cmake -H. -B_build \
-            -GNinja \
-            -DCMAKE_BUILD_TYPE="${{ matrix.build_type }}" \
-            -DBUILD_TESTING=ON \
-            -DBUILD_SHARED_LIBS="${{ matrix.build_shared }}"
-          cmake --build _build
-
-      - name: Run Tests
-        run: |
-          cd _build
-          ctest
