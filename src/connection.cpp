@@ -49,10 +49,21 @@ void connection::open(std::string_view filename) {
 }
 
 void connection::open(std::string_view filename, std::error_code &ec) noexcept {
-   int result = ::sqlite3_open_v2(filename.data(), &connection_, static_cast<int>(flags_), nullptr);
+   native_handle_t new_connection{nullptr};
+   int result = ::sqlite3_open_v2(filename.data(), &new_connection, static_cast<int>(flags_), nullptr);
+
    ec = errors::make_error_code(result);
+
+   if (!ec && new_connection) {
+      ::sqlite3_close(connection_);
+      connection_ = new_connection;
+   }
 }
 
-std::error_code connection::get_last_error() const noexcept {
+std::int64_t connection::last_insert_rowid() {
+   return ::sqlite3_last_insert_rowid(connection_);
+}
+
+std::error_code connection::last_error() const noexcept {
    return errors::make_error_code(sqlite3_extended_errcode(connection_));
 }

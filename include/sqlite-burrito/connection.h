@@ -84,7 +84,10 @@ public:
    void open(std::string_view filename, std::error_code &ec) noexcept;
 
 public:
-   [[nodiscard]] std::error_code get_last_error() const noexcept;
+   [[nodiscard]] std::int64_t last_insert_rowid();
+
+
+   [[nodiscard]] std::error_code last_error() const noexcept;
 
    [[nodiscard]] auto &native_handle() noexcept { return *connection_; };
    [[nodiscard]] const auto &native_handle() const noexcept { return *connection_; }

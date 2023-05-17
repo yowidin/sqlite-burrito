@@ -7,14 +7,19 @@
 #define INCLUDE_SQLITE_BURRITO_STATEMENT_H
 
 #include <sqlite-burrito/config.h>
+#include <sqlite-burrito/errors/sqlite.h>
 #include <sqlite-burrito/export.h>
 
+#include <array>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <type_traits>
+#include <vector>
 
 namespace sqlite_burrito {
 
@@ -134,6 +139,135 @@ public:
     */
    static optional_str_t execute(connection &conn, std::string_view sql, std::error_code &ec);
 
+   void reset();
+   void reset(std::error_code &ec);
+
+   /**
+    * Execute the a `step` call on a prepared statement.
+    * Throws an exception in case of an error
+    * @return true if there is a row available (can be accessed via `get`)
+    */
+   bool step();
+
+   /**
+    * Execute the a `step` call on a prepared statement.
+    * @param ec Error code to store the step result in.
+    * @return true if there is a row available (can be accessed via `get`)
+    */
+   bool step(std::error_code ec);
+
+   /**
+    * @return Number of rows modified by this statement
+    */
+   int execute();
+
+   /**
+    * @return Number of rows modified by this statement
+    */
+   int execute(std::error_code &ec);
+
+   ////////////////////////////////////////////////////////////////////////////////
+   /// Index-based binds
+   ////////////////////////////////////////////////////////////////////////////////
+   void bind_null(int index);
+   void bind_null(int index, std::error_code &ec);
+
+   void bind(int index, const void *blob, std::size_t size);
+   void bind(int index, const void *blob, std::size_t size, std::error_code &ec);
+
+   template <typename T>
+   void bind(int index, T value);
+
+   void bind(int index, double value, std::error_code &ec);
+   void bind(int index, std::int8_t value, std::error_code &ec);
+   void bind(int index, std::int16_t value, std::error_code &ec);
+   void bind(int index, std::int32_t value, std::error_code &ec);
+   void bind(int index, std::int64_t value, std::error_code &ec);
+   void bind(int index, std::uint8_t value, std::error_code &ec);
+   void bind(int index, std::uint16_t value, std::error_code &ec);
+   void bind(int index, std::uint32_t value, std::error_code &ec);
+   void bind(int index, std::uint64_t value, std::error_code &ec);
+   void bind(int index, std::string_view value, std::error_code &ec);
+
+   template <typename T>
+   void bind(int index, const std::vector<T> &value, std::error_code &ec);
+
+   template <typename T, std::size_t N>
+   void bind(int index, const std::array<T, N> &value, std::error_code &ec);
+
+   template <typename T, std::size_t N>
+   void bind(int index, const T (&value)[N]);
+
+   template <typename T, std::size_t N>
+   void bind(int index, const T (&value)[N], std::error_code &ec);
+
+   template <typename T>
+   void bind(int index, const std::optional<T> &value, std::error_code &ec);
+
+   ////////////////////////////////////////////////////////////////////////////////
+   /// Name-based binds
+   ////////////////////////////////////////////////////////////////////////////////
+   void bind_null(std::string_view name);
+   void bind_null(std::string_view name, std::error_code &ec);
+
+   template <typename T>
+   void bind(std::string_view name, const T &value);
+
+   template <typename T>
+   void bind(std::string_view name, const T &value, std::error_code &ec);
+
+   template <typename T, std::size_t N>
+   void bind(std::string_view name, const T (&value)[N]);
+
+   template <typename T, std::size_t N>
+   void bind(std::string_view name, const T (&value)[N], std::error_code &ec);
+
+   ////////////////////////////////////////////////////////////////////////////////
+   /// Column information
+   ////////////////////////////////////////////////////////////////////////////////
+   bool is_int(int index);
+   bool is_float(int index);
+   bool is_text(int index);
+   bool is_blob(int index);
+   bool is_null(int index);
+
+   ////////////////////////////////////////////////////////////////////////////////
+   /// Index-based getters
+   ////////////////////////////////////////////////////////////////////////////////
+   template <typename T>
+   void get(int index, T &value);
+
+   void get(int index, double &value, std::error_code &ec);
+   void get(int index, std::int8_t &value, std::error_code &ec);
+   void get(int index, std::int16_t &value, std::error_code &ec);
+   void get(int index, std::int32_t &value, std::error_code &ec);
+   void get(int index, std::int64_t &value, std::error_code &ec);
+   void get(int index, std::uint8_t &value, std::error_code &ec);
+   void get(int index, std::uint16_t &value, std::error_code &ec);
+   void get(int index, std::uint32_t &value, std::error_code &ec);
+   void get(int index, std::uint64_t &value, std::error_code &ec);
+   void get(int index, std::string &value, std::error_code &ec);
+
+   template <typename T>
+   void get(int index, std::vector<T> &value, std::error_code &ec);
+
+   template <typename T, std::size_t N>
+   void get(int index, std::array<T, N> &value, std::error_code &ec);
+
+   template <typename T, std::size_t N>
+   void get(int index, T (&value)[N]);
+
+   template <typename T, std::size_t N>
+   void get(int index, T (&value)[N], std::error_code &ec);
+
+   template <typename T>
+   void get(int index, std::optional<T> &value, std::error_code &ec);
+
+private:
+   void fill_parameters_map();
+
+   std::optional<int> find_parameter_by_name(std::string_view name);
+
 private:
    //! Database connection, this statement belongs to
    connection *connection_;
@@ -142,8 +276,210 @@ private:
    prepare_flags flags_;
 
    //! Native handle
-   native_handle_t stmt_;
+   native_handle_t stmt_{nullptr};
+
+   //! Named parameters map
+   std::optional<std::map<std::string_view, int>> parameters_{};
 };
+
+////////////////////////////////////////////////////////////////////////////////
+/// Index-based binds
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+void statement::bind(int index, T value) {
+   std::error_code ec;
+   bind(index, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T>
+void statement::bind(int index, const std::vector<T> &value, std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+   const auto full_size = sizeof(T) * value.size();
+   bind(index, value.data(), full_size, ec);
+}
+
+template <typename T, std::size_t N>
+void statement::bind(int index, const std::array<T, N> &value, std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+   const auto full_size = sizeof(T) * value.size();
+   bind(index, value.data(), full_size, ec);
+}
+
+template <typename T, std::size_t N>
+void statement::bind(int index, const T (&value)[N]) {
+   std::error_code ec;
+   bind(index, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T, std::size_t N>
+void statement::bind(int index, const T (&value)[N], std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+   const auto full_size = sizeof(T) * N;
+   bind(index, value, full_size, ec);
+}
+
+template <typename T>
+void statement::bind(int index, const std::optional<T> &value, std::error_code &ec) {
+   if (value) {
+      bind(index, *value, ec);
+   } else {
+      bind_null(index, ec);
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Name-based binds
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+void statement::bind(std::string_view name, const T &value) {
+   std::error_code ec;
+   bind(name, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T>
+void statement::bind(std::string_view name, const T &value, std::error_code &ec) {
+   auto optional_idx = find_parameter_by_name(name);
+   if (!optional_idx) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   bind(*optional_idx, value, ec);
+}
+
+template <typename T, std::size_t N>
+void statement::bind(std::string_view name, const T (&value)[N]) {
+   std::error_code ec;
+   bind(name, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T, std::size_t N>
+void statement::bind(std::string_view name, const T (&value)[N], std::error_code &ec) {
+   auto optional_idx = find_parameter_by_name(name);
+   if (!optional_idx) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   bind(*optional_idx, value, ec);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Index-based getters
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+void statement::get(int index, T &value) {
+   std::error_code ec;
+   get(index, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T>
+void statement::get(int index, std::vector<T> &value, std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+
+   auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
+   if (!num_bytes) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   auto num_values = num_bytes / sizeof(T);
+   if (num_values * sizeof(T) < num_bytes) {
+      ++num_values;
+   }
+
+   value.clear();
+   value.resize(num_values);
+
+   auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   auto to = reinterpret_cast<std::byte *>(value.data());
+   std::copy(from, from + num_bytes, to);
+}
+
+template <typename T, std::size_t N>
+void statement::get(int index, std::array<T, N> &value, std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+
+   auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
+   if (!num_bytes) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   auto num_values = num_bytes / sizeof(T);
+   if (num_values * sizeof(T) < num_bytes) {
+      ++num_values;
+   }
+
+   if (num_values != N) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   auto to = reinterpret_cast<std::byte *>(value.data());
+   std::copy(from, from + num_bytes, to);
+}
+
+template <typename T, std::size_t N>
+void statement::get(int index, T (&value)[N]) {
+   std::error_code ec;
+   get(index, value, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+template <typename T, std::size_t N>
+void statement::get(int index, T (&value)[N], std::error_code &ec) {
+   static_assert(std::is_pod_v<T>, "POD type expected");
+
+   auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
+   if (!num_bytes) {
+      ec = errors::make_error_code(errors::code::constraint_notnull);
+      return;
+   }
+
+   auto num_values = num_bytes / sizeof(T);
+   if (num_values * sizeof(T) < num_bytes) {
+      ++num_values;
+   }
+
+   if (num_values != N) {
+      ec = std::make_error_code(std::errc::invalid_argument);
+      return;
+   }
+
+   auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   auto to = reinterpret_cast<std::byte *>(value);
+   std::copy(from, from + num_bytes, to);
+}
+
+template <typename T>
+void statement::get(int index, std::optional<T> &value, std::error_code &ec) {
+   if (is_null(index)) {
+      value = std::nullopt;
+   } else {
+      T result;
+      get(index, result, ec);
+      value = std::move(result);
+   }
+}
 
 } // namespace sqlite_burrito
 

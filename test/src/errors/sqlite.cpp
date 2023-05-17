@@ -11,29 +11,29 @@
 using namespace sqlite_burrito::errors;
 
 TEST_CASE("OK code should not count as error", "[errors]") {
-   std::error_code ec = error::ok;
+   std::error_code ec = code::ok;
    REQUIRE(!ec);
    REQUIRE(ec == condition::ok);
 }
 
 TEST_CASE("Error codes should map to error conditions", "[errors]") {
-   std::error_code ec = error::ioerr_read;
+   std::error_code ec = code::ioerr_read;
    REQUIRE(ec);
    REQUIRE(ec == condition::ioerr);
 
-   ec = error::ioerr_blocked;
+   ec = code::ioerr_blocked;
    REQUIRE(ec);
    REQUIRE(ec == condition::ioerr);
 }
 
 TEST_CASE("Error codes should provide a message", "[errors]") {
-   std::error_code ec = error::ioerr_read;
+   std::error_code ec = code::ioerr_read;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 
    REQUIRE(!std::string(ec.category().name()).empty());
 
-   ec = error::ioerr_blocked;
+   ec = code::ioerr_blocked;
    REQUIRE(ec);
    REQUIRE(!ec.message().empty());
 }
@@ -51,7 +51,7 @@ TEST_CASE("Error conditions should provide a message", "[errors]") {
 }
 
 TEST_CASE("Test make functions", "[errors]") {
-   auto err = make_error_code(error::ioerr_read);
+   auto err = make_error_code(code::ioerr_read);
    REQUIRE(err);
    REQUIRE(err.category() == sqlite3_error_category());
 
