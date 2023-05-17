@@ -6,20 +6,17 @@
 
 #include <sqlite-burrito/errors/sqlite.h>
 
-using namespace sqlite_burrito::errors::sqlite3;
+using namespace sqlite_burrito::errors;
 
-#include <string>
 #include <sqlite3.h>
+#include <string>
 
-namespace detail {
+namespace {
 
-struct sqlite3_error_category : std::error_category {
-   const char *name() const noexcept override { return "sqlite3-error"; }
-
-   std::string message(int ev) const override { return sqlite3_errstr(ev); }
-
-   std::error_condition default_error_condition(
-       int ev) const noexcept override {
+struct error_category : std::error_category {
+   [[nodiscard]] const char *name() const noexcept override { return "sqlite3-error"; }
+   [[nodiscard]] std::string message(int ev) const override { return sqlite3_errstr(ev); }
+   [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
       // Excerpt from the SQLite3 docs:
       // Note that the primary result code is always a part of the extended
       // result code. Given a full 32-bit extended result code, the application
@@ -30,28 +27,23 @@ struct sqlite3_error_category : std::error_category {
    }
 };
 
-struct sqlite3_condition_category : std::error_category {
-   const char *name() const noexcept override { return "sqlite3-condition"; }
-
-   std::string message(int ev) const override { return sqlite3_errstr(ev); }
+struct condition_category : std::error_category {
+   [[nodiscard]] const char *name() const noexcept override { return "sqlite3-condition"; }
+   [[nodiscard]] std::string message(int ev) const override { return sqlite3_errstr(ev); }
 };
 
-} // namespace detail
+} // namespace
 
-namespace sqlite_burrito {
-namespace errors {
-namespace sqlite3 {
+namespace sqlite_burrito::errors {
 
 const std::error_category &sqlite3_error_category() noexcept {
-   static const detail::sqlite3_error_category value;
+   static const error_category value;
    return value;
 }
 
 const std::error_category &sqlite3_condition_category() noexcept {
-   static const detail::sqlite3_condition_category value;
+   static const condition_category value;
    return value;
 }
 
-} // namespace sqlite3
-} // namespace errors
-} // namespace sqlite_burrito
+} // namespace sqlite_burrito::errors

@@ -1,0 +1,9 @@
+{
+    "version": 4,
+    "vendor": {
+        "conan": {}
+    },
+    "include": [
+        "/Users/dsitelew/Documents/Private/playground/sqlite-burrito/test_package/build/macos-armv8/Debug/generators/CMakePresets.json"
+    ]
+}

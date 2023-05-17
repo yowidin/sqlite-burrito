@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../sqlite-burrito/.idea/sqlite-burito.iml" filepath="$PROJECT_DIR$/../sqlite-burrito/.idea/sqlite-burito.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/sqlite-burito.iml" filepath="$PROJECT_DIR$/.idea/sqlite-burito.iml" />
     </modules>
   </component>
 </project>
