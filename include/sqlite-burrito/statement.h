@@ -25,7 +25,7 @@ namespace sqlite_burrito {
 
 class connection;
 
-SQLITE_BURRITO_EXPORT class statement {
+class SQLITE_BURRITO_EXPORT statement {
 public:
    enum class prepare_flags : unsigned {
       //! No additional flags

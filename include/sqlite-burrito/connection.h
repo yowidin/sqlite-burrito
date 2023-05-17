@@ -18,7 +18,7 @@
 
 namespace sqlite_burrito {
 
-SQLITE_BURRITO_EXPORT class connection {
+class SQLITE_BURRITO_EXPORT connection {
 public:
    enum class open_flags : int {
       //! The database is opened in read-only mode. If the database does not

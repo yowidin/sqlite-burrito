@@ -9,6 +9,7 @@
 
 #include <sqlite-burrito/connection.h>
 #include <sqlite-burrito/statement.h>
+#include <sqlite-burrito/export.h>
 
 #include <functional>
 #include <string_view>
@@ -17,7 +18,7 @@ namespace sqlite_burrito {
 
 //! A database, which is tracking its own version number in a dedicated table, and is able to update itself, using
 //! the specified update callback
-class versioned_database {
+class SQLITE_BURRITO_EXPORT versioned_database {
 public:
    //! Database update function type
    //! Performs a single update step
@@ -51,8 +52,8 @@ public:
              std::string_view version_column = "version") noexcept;
 
 public:
-   connection &get_connection() { return con_; }
-   const connection &get_connection() const { return con_; }
+   [[nodiscard]] connection &get_connection() { return con_; }
+   [[nodiscard]] const connection &get_connection() const { return con_; }
 
 private:
    int get_file_version(std::string_view table, std::string_view column, std::error_code &ec);

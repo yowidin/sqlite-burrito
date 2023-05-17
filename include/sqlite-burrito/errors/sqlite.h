@@ -14,7 +14,7 @@
 
 namespace sqlite_burrito::errors {
 
-SQLITE_BURRITO_EXPORT enum class condition {
+enum class SQLITE_BURRITO_EXPORT condition {
    ok = SQLITE_OK,
 
    error = SQLITE_ERROR,
@@ -49,7 +49,7 @@ SQLITE_BURRITO_EXPORT enum class condition {
    done = SQLITE_DONE,
 };
 
-SQLITE_BURRITO_EXPORT enum class code {
+enum class SQLITE_BURRITO_EXPORT code {
    ok = SQLITE_OK,
 
    error_missing_collseq = SQLITE_ERROR_MISSING_COLLSEQ,
@@ -141,10 +141,10 @@ inline SQLITE_BURRITO_EXPORT std::error_condition make_error_condition(condition
 namespace std {
 
 template <>
-SQLITE_BURRITO_EXPORT struct is_error_code_enum<sqlite_burrito::errors::code> : true_type {};
+struct SQLITE_BURRITO_EXPORT is_error_code_enum<sqlite_burrito::errors::code> : true_type {};
 
 template <>
-SQLITE_BURRITO_EXPORT struct is_error_condition_enum<sqlite_burrito::errors::condition> : true_type {};
+struct SQLITE_BURRITO_EXPORT is_error_condition_enum<sqlite_burrito::errors::condition> : true_type {};
 
 } // namespace std
 
