@@ -4,6 +4,7 @@ add_executable(main
    src/errors/sqlite.cpp
    src/connection.cpp
    src/statement.cpp
+   src/versioned_database.cpp
 )
 
 target_link_libraries(main PRIVATE library)

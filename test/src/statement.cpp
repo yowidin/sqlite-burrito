@@ -9,8 +9,6 @@
 #include <sqlite-burrito/connection.h>
 #include <sqlite-burrito/statement.h>
 
-#include <iterator>
-
 using namespace sqlite_burrito;
 
 TEST_CASE("Prepare should return a valid iterator", "[statement][prepare]") {

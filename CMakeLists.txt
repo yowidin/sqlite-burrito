@@ -19,8 +19,8 @@ include(GNUInstallDirs)
 set(SB_GENERATED_FILES_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 set(SB_GENERATED_INCLUDES_DIR "${SB_GENERATED_FILES_DIR}/include")
 set(SB_GENERATED_SRC_DIR "${SB_GENERATED_FILES_DIR}/src")
-set(SB_GENERATED_CONFIG_HEADER  "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/config.h")
-set(SB_GENERATED_EXPORT_HEADER  "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/export.h")
+set(SB_GENERATED_CONFIG_HEADER "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/config.h")
+set(SB_GENERATED_EXPORT_HEADER "${SB_GENERATED_INCLUDES_DIR}/sqlite-burrito/export.h")
 
 file(MAKE_DIRECTORY ${SB_GENERATED_INCLUDES_DIR})
 configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in ${SB_GENERATED_CONFIG_HEADER})
@@ -31,6 +31,7 @@ add_library(library
    src/errors/sqlite.cpp
    src/connection.cpp
    src/statement.cpp
+   src/versioned_database.cpp
 )
 
 target_compile_features(library PUBLIC cxx_std_17)

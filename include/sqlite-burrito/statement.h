@@ -89,7 +89,7 @@ public:
     * @param text Statement to be compiled
     * @return Iterator pointing to the first byte past the end of the first SQL statement in `text`.
     */
-   [[nodiscard]] iterator_t prepare(std::string_view text);
+   iterator_t prepare(std::string_view text);
 
    /**
     * Prepare an SQL statement.
@@ -98,7 +98,7 @@ public:
     * @param ec Error code, storing the operation result.
     * @return Iterator pointing to the first byte past the end of the first SQL statement in `text`.
     */
-   [[nodiscard]] iterator_t prepare(std::string_view text, std::error_code &ec) noexcept;
+   iterator_t prepare(std::string_view text, std::error_code &ec) noexcept;
 
    [[nodiscard]] auto &native_handle() { return *stmt_; };
    [[nodiscard]] const auto &native_handle() const { return *stmt_; }
@@ -237,6 +237,7 @@ public:
    template <typename T>
    void get(int index, T &value);
 
+   void get(int index, float &value, std::error_code &ec);
    void get(int index, double &value, std::error_code &ec);
    void get(int index, std::int8_t &value, std::error_code &ec);
    void get(int index, std::int16_t &value, std::error_code &ec);
@@ -407,6 +408,15 @@ void statement::get(int index, std::vector<T> &value, std::error_code &ec) {
    value.resize(num_values);
 
    auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   if (!from) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // It's actually a NULL, and not an error. But we don't allow it here
+         ec = std::make_error_code(std::errc::invalid_argument);
+      }
+      return;
+   }
+
    auto to = reinterpret_cast<std::byte *>(value.data());
    std::copy(from, from + num_bytes, to);
 }
@@ -432,6 +442,15 @@ void statement::get(int index, std::array<T, N> &value, std::error_code &ec) {
    }
 
    auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   if (!from) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // It's actually a NULL, and not an error. But we don't allow it here
+         ec = std::make_error_code(std::errc::invalid_argument);
+      }
+      return;
+   }
+
    auto to = reinterpret_cast<std::byte *>(value.data());
    std::copy(from, from + num_bytes, to);
 }
@@ -466,6 +485,15 @@ void statement::get(int index, T (&value)[N], std::error_code &ec) {
    }
 
    auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
+   if (!from) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // It's actually a NULL, and not an error. But we don't allow it here
+         ec = std::make_error_code(std::errc::invalid_argument);
+      }
+      return;
+   }
+
    auto to = reinterpret_cast<std::byte *>(value);
    std::copy(from, from + num_bytes, to);
 }

@@ -317,49 +317,113 @@ bool statement::is_null(int index) {
 ////////////////////////////////////////////////////////////////////////////////
 /// Index-based getters
 ////////////////////////////////////////////////////////////////////////////////
+void statement::get(int index, float &value, std::error_code &ec) {
+   double res;
+   get(index, res, ec);
+   if (ec) {
+      return;
+   }
+
+   value = static_cast<float>(res);
+}
+
 void statement::get(int index, double &value, std::error_code &ec) {
    value = ::sqlite3_column_double(stmt_, index);
-   ec = connection_->last_error();
+   if (value == 0.0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::int8_t &value, std::error_code &ec) {
    value = static_cast<std::int8_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::int16_t &value, std::error_code &ec) {
    value = static_cast<std::int16_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::int32_t &value, std::error_code &ec) {
    value = static_cast<std::int32_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::int64_t &value, std::error_code &ec) {
    value = ::sqlite3_column_int64(stmt_, index);
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::uint8_t &value, std::error_code &ec) {
    value = static_cast<std::uint8_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::uint16_t &value, std::error_code &ec) {
    value = static_cast<std::uint16_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::uint32_t &value, std::error_code &ec) {
    value = static_cast<std::uint32_t>(::sqlite3_column_int(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::uint64_t &value, std::error_code &ec) {
    value = static_cast<std::uint64_t>(::sqlite3_column_int64(stmt_, index));
-   ec = connection_->last_error();
+   if (value == 0) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // Spurious error - it's actually zero, and not an error
+         ec = errors::code::ok;
+      }
+   }
 }
 
 void statement::get(int index, std::string &value, std::error_code &ec) {
@@ -379,5 +443,13 @@ void statement::get(int index, std::string &value, std::error_code &ec) {
    value.resize(num_chars);
 
    auto from = reinterpret_cast<const char *>(::sqlite3_column_text(stmt_, index));
+   if (!from) {
+      ec = connection_->last_error();
+      if (ec == errors::condition::row) {
+         // It's actually a NULL, and not an error. But we don't allow it here
+         ec = std::make_error_code(std::errc::invalid_argument);
+      }
+      return;
+   }
    std::copy(from, from + num_bytes, std::begin(value));
 }
