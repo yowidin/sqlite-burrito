@@ -178,7 +178,9 @@ public:
    template <typename T>
    void bind(int index, T value);
 
+   void bind(int index, float value, std::error_code &ec);
    void bind(int index, double value, std::error_code &ec);
+   void bind(int index, bool value, std::error_code &ec);
    void bind(int index, std::int8_t value, std::error_code &ec);
    void bind(int index, std::int16_t value, std::error_code &ec);
    void bind(int index, std::int32_t value, std::error_code &ec);
@@ -239,6 +241,7 @@ public:
 
    void get(int index, float &value, std::error_code &ec);
    void get(int index, double &value, std::error_code &ec);
+   void get(int index, bool &value, std::error_code &ec);
    void get(int index, std::int8_t &value, std::error_code &ec);
    void get(int index, std::int16_t &value, std::error_code &ec);
    void get(int index, std::int32_t &value, std::error_code &ec);

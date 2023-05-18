@@ -136,6 +136,13 @@ CREATE TABLE IF NOT EXISTS test(
       REQUIRE_NOTHROW(stmt.execute());
    }
 
+   SECTION("bool type") {
+      REQUIRE_NOTHROW(stmt.bind(1, true));
+      REQUIRE_NOTHROW(stmt.bind(2, false));
+
+      REQUIRE_NOTHROW(stmt.execute());
+   }
+
    SECTION("real types") {
       float f = 3.14f;
       double d = 3.14;
