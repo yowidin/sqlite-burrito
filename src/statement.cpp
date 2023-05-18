@@ -166,25 +166,6 @@ int statement::execute(std::error_code &ec) {
    return 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// Index-based binds
-////////////////////////////////////////////////////////////////////////////////
-void statement::bind_null(int index) {
-   std::error_code ec;
-   bind_null(index, ec);
-   if (ec) {
-      throw std::system_error(ec);
-   }
-}
-
-void statement::bind(int index, const void *blob, std::size_t size) {
-   std::error_code ec;
-   bind(index, blob, size, ec);
-   if (ec) {
-      throw std::system_error(ec);
-   }
-}
-
 void statement::fill_parameters_map() {
    if (parameters_) {
       // Already filled up
@@ -221,12 +202,41 @@ std::optional<int> statement::find_parameter_by_name(std::string_view name) {
    return it->second;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Index-based binds
+////////////////////////////////////////////////////////////////////////////////
+void statement::bind_null(int index) {
+   std::error_code ec;
+   bind_null(index, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
 void statement::bind_null(int index, std::error_code &ec) {
    ec = errors::make_error_code(::sqlite3_bind_null(stmt_, index));
 }
 
+void statement::bind(int index, const void *blob, std::size_t size) {
+   std::error_code ec;
+   bind(index, blob, size, ec);
+   if (ec) {
+      throw std::system_error(ec);
+   }
+}
+
+void statement::bind(int index, float value, std::error_code &ec) {
+   double double_value = static_cast<double>(value);
+   ec = errors::make_error_code(::sqlite3_bind_double(stmt_, index, double_value));
+}
+
 void statement::bind(int index, double value, std::error_code &ec) {
    ec = errors::make_error_code(::sqlite3_bind_double(stmt_, index, value));
+}
+
+void statement::bind(int index, bool value, std::error_code &ec) {
+   int int_value = value ? 1 : 0;
+   ec = errors::make_error_code(::sqlite3_bind_int(stmt_, index, int_value));
 }
 
 void statement::bind(int index, std::int8_t value, std::error_code &ec) {
@@ -336,6 +346,16 @@ void statement::get(int index, double &value, std::error_code &ec) {
          ec = errors::code::ok;
       }
    }
+}
+
+void statement::get(int index, bool &value, std::error_code &ec) {
+   int int_value;
+   get(index, int_value, ec);
+   if (ec) {
+      return;
+   }
+
+   value = (int_value != 0);
 }
 
 void statement::get(int index, std::int8_t &value, std::error_code &ec) {

@@ -1,8 +1,10 @@
 from conan import ConanFile
-from conan.tools.files import copy, rmdir
+from conan.tools.files import copy, rmdir, load
 from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 from conan.tools.build import check_min_cppstd
+
 import os
+import re
 
 
 class Recipe(ConanFile):
@@ -12,7 +14,6 @@ class Recipe(ConanFile):
     url = "https://github.com/yowidin/sqlite-burrito"
     homepage = "https://github.com/yowidin/sqlite-burrito"
     package_type = "library"
-    version = "0.2.0"
 
     settings = "os", "arch", "compiler", "build_type"
     options = {
@@ -37,6 +38,19 @@ class Recipe(ConanFile):
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+
+    def set_version(self):
+        if self.version:
+            return
+
+        cmake_contents = load(self, 'CMakeLists.txt')
+
+        regex = r"^set\(SB_VERSION\s*(.*?)\)\s*$"
+        m = re.search(regex, cmake_contents, re.MULTILINE)
+        if not m:
+            raise RuntimeError('Error extracting library version')
+
+        self.version = m.group(1)
 
     def configure(self):
         if self.options.shared:
@@ -70,3 +84,4 @@ class Recipe(ConanFile):
         self.cpp_info.set_property("cmake_file_name", "SQLiteBurrito")
         self.cpp_info.set_property("cmake_target_name", "SQLiteBurrito::library")
         self.cpp_info.libs = ["SQLiteBurrito"]
+        self.cpp_info.requires = ["sqlite3::sqlite3"]

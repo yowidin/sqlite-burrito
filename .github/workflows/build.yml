@@ -1,9 +1,6 @@
 ---
 name: Build and Run Tests
 
-env:
-  REFERENCE: "sqlite-burrito/0.2.0@conan-burrito/stable"
-
 on:
   push:
     branches-ignore: [main]
