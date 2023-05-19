@@ -55,6 +55,7 @@ jobs:
         run: |
           conan --version
           conan profile detect
+          conan config install ./profiles
           conan remote add conan-burrito "${{ secrets.CONAN_UPLOAD }}"
           conan remote login conan-burrito "${{ secrets.CONAN_LOGIN_USERNAME }}" -p "${{ secrets.CONAN_PASSWORD }}"
 
