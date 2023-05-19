@@ -32,6 +32,7 @@ add_library(library
    src/errors/sqlite.cpp
    src/connection.cpp
    src/statement.cpp
+   src/transaction.cpp
    src/versioned_database.cpp
 )
 

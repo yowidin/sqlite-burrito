@@ -67,3 +67,7 @@ std::int64_t connection::last_insert_rowid() {
 std::error_code connection::last_error() const noexcept {
    return errors::make_error_code(sqlite3_extended_errcode(connection_));
 }
+
+transaction connection::begin_transaction(transaction::behavior behavior) {
+   return transaction{*this, behavior};
+}

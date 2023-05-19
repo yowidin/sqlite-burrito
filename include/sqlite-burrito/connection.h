@@ -8,6 +8,7 @@
 
 #include <sqlite-burrito/config.h>
 #include <sqlite-burrito/export.h>
+#include <sqlite-burrito/transaction.h>
 
 #include <sqlite3.h>
 
@@ -86,11 +87,13 @@ public:
 public:
    [[nodiscard]] std::int64_t last_insert_rowid();
 
-
    [[nodiscard]] std::error_code last_error() const noexcept;
 
    [[nodiscard]] auto &native_handle() noexcept { return *connection_; };
    [[nodiscard]] const auto &native_handle() const noexcept { return *connection_; }
+
+   [[nodiscard]] transaction begin_transaction(
+       transaction::behavior behavior = transaction::behavior::default_behavior);
 
 private:
    //! Database open flags
