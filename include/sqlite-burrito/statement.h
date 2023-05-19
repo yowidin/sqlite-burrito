@@ -9,6 +9,7 @@
 #include <sqlite-burrito/config.h>
 #include <sqlite-burrito/errors/sqlite.h>
 #include <sqlite-burrito/export.h>
+#include <sqlite-burrito/connection.h>
 
 #include <array>
 #include <functional>

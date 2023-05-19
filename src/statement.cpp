@@ -48,7 +48,7 @@ statement::iterator_t statement::prepare(std::string_view text, std::error_code 
 
    auto distance = std::distance(text.data(), tail);
 
-   if (distance < text.length()) {
+   if (distance < static_cast<decltype(distance)>(text.length())) {
       return text.begin() + distance;
    } else {
       return std::end(text);

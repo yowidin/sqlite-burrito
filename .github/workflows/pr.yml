@@ -55,17 +55,6 @@ jobs:
           conan --version
           conan profile detect
 
-      - name: Install dependencies
-        run:  |
-          conan install -b missing -s compiler.cppstd=17 -s build_type=${{ matrix.build_type }}  -c:h tools.cmake.cmake_layout:build_folder_vars='[]' .
-
-      - name: Build library
-        run:  |
-          cmake -H. -Bbuild/${{ matrix.build_type }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON \
-                -DCMAKE_TOOLCHAIN_FILE=./build/${{ matrix.build_type }}/generators/conan_toolchain.cmake  \
-                -DBUILD_SHARED_LIBS="${{ matrix.shared }}"
-          cmake --build build/${{ matrix.build_type }}
-
-      - name: Run Tests
-        run:  |
-          ctest --test-dir build/${{ matrix.build_type }}
+      - name: Build and test
+        run: |
+          python3 .ci/pr.py ${{ matrix.build_type }} ${{ matrix.shared }}
