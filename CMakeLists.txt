@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 set(SB_SOVERSION 0)
 mark_as_advanced(SB_SOVERSION)
 
-set(SB_VERSION 0.2.1)
+set(SB_VERSION 0.2.2)
 mark_as_advanced(SB_VERSION)
 
 project(SQLiteBurrito VERSION ${SB_VERSION} LANGUAGES CXX)

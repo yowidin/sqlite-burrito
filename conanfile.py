@@ -43,7 +43,7 @@ class Recipe(ConanFile):
         if self.version:
             return
 
-        cmake_contents = load(self, 'CMakeLists.txt')
+        cmake_contents = load(self, os.path.join(self.recipe_folder, 'CMakeLists.txt'))
 
         regex = r"^set\(SB_VERSION\s*(.*?)\)\s*$"
         m = re.search(regex, cmake_contents, re.MULTILINE)
