@@ -54,6 +54,7 @@ jobs:
         run: |
           conan --version
           conan profile detect
+          conan config install ./profiles
 
       - name: Build and test
         run: |
