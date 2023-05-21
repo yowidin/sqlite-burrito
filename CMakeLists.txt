@@ -67,6 +67,12 @@ if(BUILD_TESTING)
    add_subdirectory(test)
 endif()
 
+# Samples
+option(BUILD_EXAMPLES "Build usage examples" OFF)
+if(BUILD_EXAMPLES)
+   add_subdirectory(example)
+endif()
+
 # Configure installation settings
 include(GenerateExportHeader)
 generate_export_header(
