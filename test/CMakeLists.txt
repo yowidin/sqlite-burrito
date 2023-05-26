@@ -3,6 +3,7 @@ add_executable(main
 
    src/errors/sqlite.cpp
    src/connection.cpp
+   src/empty_arrays.cpp
    src/statement.cpp
    src/transaction.cpp
    src/versioned_database.cpp
