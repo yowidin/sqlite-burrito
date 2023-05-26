@@ -449,9 +449,11 @@ void statement::get(int index, std::uint64_t &value, std::error_code &ec) {
 void statement::get(int index, std::string &value, std::error_code &ec) {
    using value_type = std::string::value_type;
 
+   value.clear();
+
    auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
    if (!num_bytes) {
-      ec = std::make_error_code(std::errc::invalid_argument);
+      // Empty string
       return;
    }
 

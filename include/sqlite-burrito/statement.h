@@ -265,6 +265,16 @@ public:
    template <typename T, std::size_t N>
    void get(int index, T (&value)[N], std::error_code &ec);
 
+   /**
+    * Get an optional value (If the column value is NULL, an empty optional will be assigned to the value).
+    *
+    * @note There is a SQLite3 quirk, where empty BLOBs are reported as having the NULL column type, which falsely
+    *       indicates to the library, that the value is an empty optional, instead of an empty array.
+    *
+    * @param index Column index.
+    * @param value Target optional, to store the value into.
+    * @param ec Error code.
+    */
    template <typename T>
    void get(int index, std::optional<T> &value, std::error_code &ec);
 
@@ -397,9 +407,11 @@ template <typename T>
 void statement::get(int index, std::vector<T> &value, std::error_code &ec) {
    static_assert(std::is_pod_v<T>, "POD type expected");
 
+   value.clear();
+
    auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
    if (!num_bytes) {
-      ec = std::make_error_code(std::errc::invalid_argument);
+      // Empty vector
       return;
    }
 
@@ -408,7 +420,6 @@ void statement::get(int index, std::vector<T> &value, std::error_code &ec) {
       ++num_values;
    }
 
-   value.clear();
    value.resize(num_values);
 
    auto from = reinterpret_cast<const std::byte *>(::sqlite3_column_blob(stmt_, index));
@@ -430,10 +441,6 @@ void statement::get(int index, std::array<T, N> &value, std::error_code &ec) {
    static_assert(std::is_pod_v<T>, "POD type expected");
 
    auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
-   if (!num_bytes) {
-      ec = std::make_error_code(std::errc::invalid_argument);
-      return;
-   }
 
    auto num_values = num_bytes / sizeof(T);
    if (num_values * sizeof(T) < num_bytes) {
@@ -473,10 +480,6 @@ void statement::get(int index, T (&value)[N], std::error_code &ec) {
    static_assert(std::is_pod_v<T>, "POD type expected");
 
    auto num_bytes = static_cast<std::size_t>(::sqlite3_column_bytes(stmt_, index));
-   if (!num_bytes) {
-      ec = errors::make_error_code(errors::code::constraint_notnull);
-      return;
-   }
 
    auto num_values = num_bytes / sizeof(T);
    if (num_values * sizeof(T) < num_bytes) {
