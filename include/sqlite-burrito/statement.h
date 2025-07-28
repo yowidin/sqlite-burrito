@@ -12,6 +12,7 @@
 #include <sqlite-burrito/connection.h>
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>

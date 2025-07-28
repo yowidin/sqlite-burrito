@@ -12,6 +12,7 @@
 
 #include <sqlite3.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
