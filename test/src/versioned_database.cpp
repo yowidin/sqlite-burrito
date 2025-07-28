@@ -4,7 +4,7 @@
  * @date   May 17, 2023
  */
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <sqlite-burrito/versioned_database.h>
 
