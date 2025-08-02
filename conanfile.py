@@ -60,7 +60,8 @@ class Recipe(ConanFile):
         cmake_layout(self, src_folder='.')
 
     def requirements(self):
-        self.requires("sqlite3/3.41.2", transitive_headers=True, transitive_libs=True)
+        self.requires("sqlite3/3.49.1", transitive_headers=True, transitive_libs=True)
+        self.test_requires("catch2/3.8.1")
 
     def generate(self):
         tc = CMakeToolchain(self)
