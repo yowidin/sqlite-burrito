@@ -1,7 +1,8 @@
 from conan import ConanFile
 from conan.tools.files import copy, rmdir, load
-from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
-from conan.tools.build import check_min_cppstd
+from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.build import check_min_cppstd, can_run
+from conan.tools.env import VirtualRunEnv, Environment
 
 import os
 import re
@@ -14,6 +15,7 @@ class Recipe(ConanFile):
     url = "https://github.com/yowidin/sqlite-burrito"
     homepage = "https://github.com/yowidin/sqlite-burrito"
     package_type = "library"
+    generators = 'CMakeToolchain', 'CMakeDeps', 'VirtualRunEnv'
 
     settings = "os", "arch", "compiler", "build_type"
     options = {
@@ -63,17 +65,25 @@ class Recipe(ConanFile):
         self.requires("sqlite3/3.49.1", transitive_headers=True, transitive_libs=True)
         self.test_requires("catch2/3.8.1")
 
-    def generate(self):
-        tc = CMakeToolchain(self)
-        tc.generate()
-
-        deps = CMakeDeps(self)
-        deps.generate()
-
     def build(self):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+
+        if can_run(self):
+            # All of this could be replaced by `cmake.ctest()` but currently on Windows this results in our own
+            # library path not being added to the PATH variable and this not being found in shared builds.
+            env = VirtualRunEnv(self)
+            with env.vars().apply():
+                if self.settings.os == "Windows":
+                    lib_dir = os.path.join(self.build_folder, str(self.settings.build_type))
+                    env_vars = Environment()
+                    env_vars.prepend_path("PATH", lib_dir)
+
+                    with env_vars.vars(self).apply():
+                        cmake.ctest()
+                else:
+                    cmake.ctest()
 
     def package(self):
         copy(self, "LICENSE*", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))

@@ -13,4 +13,4 @@ target_link_libraries(main PRIVATE library Catch2::Catch2WithMain)
 
 target_compile_features(main PRIVATE cxx_std_17)
 
-add_test(NAME catch2 COMMAND main WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+add_test(NAME tests COMMAND main WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

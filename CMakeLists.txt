@@ -62,8 +62,8 @@ target_include_directories(library
 target_link_libraries(library PUBLIC SQLite::SQLite3)
 
 # Testing
+include(CTest)
 if(BUILD_TESTING)
-   include(CTest)
    add_subdirectory(test)
 endif()
 
