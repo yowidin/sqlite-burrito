@@ -20,26 +20,25 @@ class Recipe(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
-        "fPIC": [True, False]
+        "fPIC": [True, False],
     }
     default_options = {
         "shared": False,
-        "fPIC": True
+        "fPIC": True,
     }
 
     exports_sources = '*', '!.git/*', '!build/*', '!cmake-build-*'
 
-    @property
-    def _minimum_cpp_standard(self):
-        return 17
-
     def validate(self):
-        if self.settings.compiler.cppstd:
-            check_min_cppstd(self, self._minimum_cpp_standard)
+        check_min_cppstd(self, "17")
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+
+    def configure(self):
+        if self.options.shared:
+            self.options.rm_safe("fPIC")
 
     def set_version(self):
         if self.version:
@@ -53,10 +52,6 @@ class Recipe(ConanFile):
             raise RuntimeError('Error extracting library version')
 
         self.version = m.group(1)
-
-    def configure(self):
-        if self.options.shared:
-            self.options.rm_safe("fPIC")
 
     def layout(self):
         cmake_layout(self, src_folder='.')
