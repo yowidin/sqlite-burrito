@@ -1,0 +1,128 @@
+---
+name: Build and Run Tests
+
+on:
+  push:
+    branches-ignore: [ main ]
+    tags:
+      - "**"
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    # Force bash on all operating systems, otherwise Windows builds will fail because they would be using PowerShell
+    # and couldn't correctly handle the environment variables setup.
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-13, ubuntu-22.04, windows-2022 ]
+        build_type: [ Debug, Release ]
+        shared: [ "True", "False" ]
+        arch: [ x64, armv8 ]
+        exclude:
+          - os: ubuntu-22.04
+            arch: armv8
+          - os: windows-2022
+            arch: armv8
+
+    steps:
+      # Note: we cannot use `if` here because the `if` conditions are evaluated before a matrix is applied.
+      - name: Configure matrix-dependant environment variables
+        run: |
+          echo "ARCH_ARG=${{ matrix.arch == 'armv8' && 'armv8' || matrix.arch == 'x64' && 'x86_64' }}" >> $GITHUB_ENV
+          echo "OS_ARG=${{ matrix.os == 'macos-13' && '-s:h os.version=11.0' || '' }}" >> $GITHUB_ENV
+          echo "OS_NAME=${{ matrix.os == 'macos-13' && 'macos' || matrix.os == 'ubuntu-22.04' && 'ubuntu' || 'windows' }}" >> $GITHUB_ENV
+          echo "SHARED_NAME=${{ matrix.shared == 'True' && 'shared' || 'static' }}" >> $GITHUB_ENV
+          echo "BUILD_TYPE_NAME=${{ matrix.build_type == 'Debug' && 'debug' || 'release' }}" >> $GITHUB_ENV
+
+      - name: Setup stable channel
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "BUILD_CHANNEL=stable" >> $GITHUB_ENV
+
+      - name: Setup testing channel
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: echo "BUILD_CHANNEL=testing" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install conan==2.19.0
+
+      - name: Configure conan
+        run: |
+          conan --version
+          conan profile detect
+          conan remote add conan-burrito "${{ secrets.CONAN_UPLOAD }}"
+          conan remote login conan-burrito "${{ secrets.CONAN_LOGIN_USERNAME }}" -p "${{ secrets.CONAN_PASSWORD }}"
+
+      - name: Increase conan HTTP timeouts
+        run: |
+          mkdir -p .ci/profiles
+          echo 'core.net.http:timeout=300' > .ci/profiles/global.conf
+          echo 'tools.cmake.cmake_layout:build_folder_vars=["settings.arch","settings.build_type","options.shared"]' >> .ci/profiles/global.conf
+          conan config install .ci/profiles
+
+      - name: Collect common args
+        run: |
+          echo "COMMON_ARGS=-b missing -s:a compiler.cppstd=17 ${{ env.OS_ARG }} -s:h arch=${{ env.ARCH_ARG }} "\
+               "-o *:shared=${{ matrix.shared }} -s build_type=${{ matrix.build_type }}" >> $GITHUB_ENV 
+          echo "BUILD_DIR_NAME=${{ env.ARCH_ARG }}-${{ env.BUILD_TYPE_NAME }}-${{ env.SHARED_NAME }}" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          conan build ${{ env.COMMON_ARGS }} .
+          cd build/${{ env.BUILD_DIR_NAME }}
+          cpack -C ${{ matrix.build_type }} -G ZIP
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite-burrito-${{ env.OS_NAME }}-${{ env.BUILD_DIR_NAME }}
+          path: build/${{ env.BUILD_DIR_NAME }}/*.zip
+          if-no-files-found: error
+
+      - name: Create conan package
+        run: conan create --user=conan-burrito --channel=${{ env.BUILD_CHANNEL }} ${{ env.COMMON_ARGS }} .
+
+      - name: Upload conan packages
+        if: startsWith(github.ref, 'refs/tags/')
+        run: conan upload -c -r conan-burrito '*:*'
+
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifact
+
+      - name: List artifacts
+        run: ls -R
+        working-directory: artifact
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            artifact/**/*
+          fail_on_unmatched_files: true
