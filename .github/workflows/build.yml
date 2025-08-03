@@ -126,3 +126,11 @@ jobs:
           files: |
             artifact/**/*
           fail_on_unmatched_files: true
+
+  # Pointless job that allows using a single check for CI dependencies
+  build_post:
+    name: Build Post
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: "true"
