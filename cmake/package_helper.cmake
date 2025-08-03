@@ -5,9 +5,9 @@ set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 
 # Shared/static suffix
 if(BUILD_SHARED_LIBS)
-    set(LIBRARY_TYPE "shared")
+    set(LIBRARY_TYPE "Shared")
 else()
-    set(LIBRARY_TYPE "static")
+    set(LIBRARY_TYPE "Static")
 endif()
 
 # User-friendly CPU architecture
@@ -31,16 +31,33 @@ endif()
 
 # User-friendly OS name
 if(WIN32)
-    set(OS_NAME "windows")
+    set(OS_NAME "Windows")
 elseif(APPLE)
-    set(OS_NAME "macos")
+    set(OS_NAME "Macos")
 elseif(UNIX)
-    set(OS_NAME "linux")
+    set(OS_NAME "Linux")
 else()
     set(OS_NAME ${CMAKE_SYSTEM_NAME})
     string(TOLOWER ${OS_NAME} OS_NAME)
 endif()
 
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${PROJECT_VERSION}-${OS_NAME}-${CPU_ARCH}-${LIBRARY_TYPE}")
+# User-friendly build type
+get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(IS_MULTI_CONFIG)
+    set(BUILD_TYPE "@CPACK_BUILD_CONFIG@")
+else()
+    # Single-config generator logic (as above)
+    if(CMAKE_BUILD_TYPE)
+        if(CMAKE_BUILD_TYPE)
+            set(BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+        else()
+            set(BUILD_TYPE "Release")
+        endif()
+    else()
+        set(BUILD_TYPE "Release")
+    endif()
+endif()
+
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${PROJECT_VERSION}-${OS_NAME}-${CPU_ARCH}-${LIBRARY_TYPE}-${BUILD_TYPE}")
 
 include(CPack)
