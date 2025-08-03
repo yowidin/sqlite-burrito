@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 set(SB_SOVERSION 0)
 mark_as_advanced(SB_SOVERSION)
 
-set(SB_VERSION 0.2.3)
+set(SB_VERSION 0.2.4)
 mark_as_advanced(SB_VERSION)
 
 project(SQLiteBurrito VERSION ${SB_VERSION} LANGUAGES CXX)
@@ -62,8 +62,8 @@ target_include_directories(library
 target_link_libraries(library PUBLIC SQLite::SQLite3)
 
 # Testing
+include(CTest)
 if(BUILD_TESTING)
-   include(CTest)
    add_subdirectory(test)
 endif()
 

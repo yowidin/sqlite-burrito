@@ -1,6 +1,6 @@
-add_executable(main
-   src/main.cpp
+find_package(Catch2 CONFIG REQUIRED)
 
+add_executable(main
    src/errors/sqlite.cpp
    src/connection.cpp
    src/empty_arrays.cpp
@@ -9,12 +9,8 @@ add_executable(main
    src/versioned_database.cpp
 )
 
-target_link_libraries(main PRIVATE library)
+target_link_libraries(main PRIVATE library Catch2::Catch2WithMain)
 
 target_compile_features(main PRIVATE cxx_std_17)
 
-target_include_directories(main
-   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
-)
-
-add_test(NAME catch2 COMMAND main WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+add_test(NAME tests COMMAND main WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

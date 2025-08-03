@@ -1,7 +1,8 @@
 from conan import ConanFile
 from conan.tools.files import copy, rmdir, load
-from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
-from conan.tools.build import check_min_cppstd
+from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.build import check_min_cppstd, can_run
+from conan.tools.env import VirtualRunEnv, Environment
 
 import os
 import re
@@ -14,30 +15,30 @@ class Recipe(ConanFile):
     url = "https://github.com/yowidin/sqlite-burrito"
     homepage = "https://github.com/yowidin/sqlite-burrito"
     package_type = "library"
+    generators = 'CMakeToolchain', 'CMakeDeps', 'VirtualRunEnv'
 
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
-        "fPIC": [True, False]
+        "fPIC": [True, False],
     }
     default_options = {
         "shared": False,
-        "fPIC": True
+        "fPIC": True,
     }
 
     exports_sources = '*', '!.git/*', '!build/*', '!cmake-build-*'
 
-    @property
-    def _minimum_cpp_standard(self):
-        return 17
-
     def validate(self):
-        if self.settings.compiler.cppstd:
-            check_min_cppstd(self, self._minimum_cpp_standard)
+        check_min_cppstd(self, "17")
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+
+    def configure(self):
+        if self.options.shared:
+            self.options.rm_safe("fPIC")
 
     def set_version(self):
         if self.version:
@@ -52,27 +53,32 @@ class Recipe(ConanFile):
 
         self.version = m.group(1)
 
-    def configure(self):
-        if self.options.shared:
-            self.options.rm_safe("fPIC")
-
     def layout(self):
         cmake_layout(self, src_folder='.')
 
     def requirements(self):
-        self.requires("sqlite3/3.41.2", transitive_headers=True, transitive_libs=True)
-
-    def generate(self):
-        tc = CMakeToolchain(self)
-        tc.generate()
-
-        deps = CMakeDeps(self)
-        deps.generate()
+        self.requires("sqlite3/3.49.1", transitive_headers=True, transitive_libs=True)
+        self.test_requires("catch2/3.8.1")
 
     def build(self):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+
+        if can_run(self):
+            # All of this could be replaced by `cmake.ctest()` but currently on Windows this results in our own
+            # library path not being added to the PATH variable and this not being found in shared builds.
+            env = VirtualRunEnv(self)
+            with env.vars().apply():
+                if self.settings.os == "Windows":
+                    lib_dir = os.path.join(self.build_folder, str(self.settings.build_type))
+                    env_vars = Environment()
+                    env_vars.prepend_path("PATH", lib_dir)
+
+                    with env_vars.vars(self).apply():
+                        cmake.ctest()
+                else:
+                    cmake.ctest()
 
     def package(self):
         copy(self, "LICENSE*", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))

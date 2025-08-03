@@ -12,6 +12,7 @@
 #include <sqlite-burrito/connection.h>
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -144,7 +145,7 @@ public:
    void reset(std::error_code &ec);
 
    /**
-    * Execute the a `step` call on a prepared statement.
+    * Execute the `step` call on a prepared statement.
     * Throws an exception in case of an error
     * @return true if there is a row available (can be accessed via `get`)
     */
@@ -294,7 +295,12 @@ private:
    native_handle_t stmt_{nullptr};
 
    //! Named parameters map
-   std::optional<std::map<std::string_view, int>> parameters_{};
+   //! The Pimpl (Pointer to IMPLementation) idiom is used here to hide implementation details,
+   //! such as STL types without a DLL interface, from the public class interface. This avoids
+   //! MSVC warning C4251 and ensures ABI stability across DLL boundaries.
+   //! We are not using a unique_ptr here because MSVC requires the parameter_map type to be completely defined.
+   struct parameter_map;
+   parameter_map *parameters_{};
 };
 
 ////////////////////////////////////////////////////////////////////////////////
