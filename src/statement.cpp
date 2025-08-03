@@ -4,6 +4,8 @@
  * @date   Jul. 22, 2020
  */
 
+#include "sqlite-burrito/statement.h"
+
 #include <sqlite-burrito/connection.h>
 #include <sqlite-burrito/errors/sqlite.h>
 #include <sqlite-burrito/statement.h>
@@ -14,6 +16,10 @@
 
 using namespace sqlite_burrito;
 
+struct statement::parameter_map {
+   std::map<std::string_view, int> map{};
+};
+
 statement::statement(connection &conn, prepare_flags flags)
    : connection_{&conn}
    , flags_{flags} {
@@ -21,6 +27,8 @@ statement::statement(connection &conn, prepare_flags flags)
 }
 
 statement::~statement() {
+   delete parameters_;
+
    ::sqlite3_finalize(stmt_);
 }
 
@@ -173,13 +181,13 @@ void statement::fill_parameters_map() {
    }
 
    // Construct default map
-   parameters_ = decltype(parameters_)::value_type{};
-   auto &map = parameters_.value();
+   parameters_ = new parameter_map();
+   auto &map = parameters_->map;
 
    // Fill the map
-   auto max_index = ::sqlite3_bind_parameter_count(stmt_);
+   const auto max_index = ::sqlite3_bind_parameter_count(stmt_);
    for (int i = 1; i <= max_index; ++i) {
-      auto ptr = sqlite3_bind_parameter_name(stmt_, i);
+      const auto ptr = sqlite3_bind_parameter_name(stmt_, i);
       if (!ptr) {
          // Either out of range, or a nameless parameter
          continue;
@@ -194,8 +202,8 @@ std::optional<int> statement::find_parameter_by_name(std::string_view name) {
       fill_parameters_map();
    }
 
-   auto it = parameters_->find(name);
-   if (it == parameters_->end()) {
+   auto it = parameters_->map.find(name);
+   if (it == parameters_->map.end()) {
       return {};
    }
 
