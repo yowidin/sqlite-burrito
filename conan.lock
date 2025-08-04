@@ -1,0 +1,12 @@
+{
+    "version": "0.5",
+    "requires": [
+        "sqlite3/3.49.1#8631739a4c9b93bd3d6b753bac548a63%1740462952.817",
+        "catch2/3.8.1#141f4cd552b86c7278436c434473ae2f%1746216399.318"
+    ],
+    "build_requires": [
+        "cmake/3.31.8#dde3bde00bb843687e55aea5afa0e220%1751628300.59"
+    ],
+    "python_requires": [],
+    "config_requires": []
+}
